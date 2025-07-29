@@ -1,3 +1,4 @@
+'use client';
 // components/auth/AuthButtons.js
 import React from 'react';
 import { signInWithOAuth, sendMagicLink } from '../../lib/auth';
@@ -66,19 +67,19 @@ export default function AuthButtons() {
         <% if (providers.includes('GitHub')) { %>
         <button onClick={() => handleOAuthSignIn('github')} className={buttonBaseStyles}>
           <ProviderIcon provider="github" />
-          <span>Sign in with GitHub</span>
+          Sign in with GitHub
         </button>
         <% } %>
         <% if (providers.includes('Google')) { %>
         <button onClick={() => handleOAuthSignIn('google')} className={buttonBaseStyles}>
           <ProviderIcon provider="google" />
-          <span>Sign in with Google</span>
+          Sign in with Google
         </button>
         <% } %>
         <% if (providers.includes('Email Magic Links')) { %>
         <button onClick={handleMagicLink} className={buttonBaseStyles}>
           <ProviderIcon provider="magiclink" />
-          <span>Sign in with Email</span>
+          Sign in with Magic Link
         </button>
         <% } %>
       </div>

@@ -7,21 +7,63 @@ const path = require('path');
 const { execSync } = require('child_process');
 const { generateFiles } = require('../lib/generators/fileGenerator');
 
-function detectFramework() {
+async function detectFramework() {
   const packageJsonPath = path.join(process.cwd(), 'package.json');
   if (!fs.existsSync(packageJsonPath)) {
+    console.log(chalk.red('No package.json found in the current directory. Please run this command in a valid project directory.'));
     return null;
   }
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
   const dependencies = { ...packageJson.dependencies, ...packageJson.devDependencies };
 
   if (dependencies['next']) {
+    console.log(chalk.green('Detected framework: Next.js'));
     return 'Next.js';
   }
   if (dependencies['react']) {
+    console.log(chalk.green('Detected framework: React'));
     return 'React';
   }
-  return null;
+  if (dependencies['vue']) {
+    console.log(chalk.green('Detected framework: Vue.js'));
+    return 'Vue.js';
+  }
+  if (dependencies['@angular/core']) {
+    console.log(chalk.green('Detected framework: Angular'));
+    return 'Angular';
+  }
+  
+  // Manual selection with confirmation
+  console.log(chalk.yellow('Could not automatically detect a framework. Please select one manually.'));
+  
+  const answers = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'framework',
+      message: 'Which framework are you using?',
+      choices: [
+        { name: 'Next.js (React framework with SSR)', value: 'Next.js' },
+        { name: 'React (JavaScript library)', value: 'React' },
+        { name: 'Vue.js (Progressive framework)', value: 'Vue.js' },
+        { name: 'Angular (TypeScript framework)', value: 'Angular' },
+        { name: 'Other/Custom setup', value: 'Other' }
+      ],
+      default: 'React'
+    },
+    {
+      type: 'confirm',
+      name: 'confirmChoice',
+      message: (answers) => `Confirm you want to use ${answers.framework}?`,
+      default: true
+    }
+  ]);
+
+  if (!answers.confirmChoice) {
+    console.log(chalk.red('Operation cancelled.'));
+    return null;
+  }
+
+  return answers.framework;
 }
 
 async function main() {
@@ -34,7 +76,7 @@ async function main() {
       message: 'What would you like to do?',
       choices: [
         { name: 'Generate authentication files', value: 'generate' },
-        { name: 'Remove previously generated files', value: 'remove' },
+        { name: 'Remove previously generated files', value: 'remove' },// For testing purposes 
       ],
     },
   ]);
@@ -47,27 +89,30 @@ async function main() {
 }
 
 async function generate() {
-  let framework = detectFramework();
-  if (framework) {
-    console.log(chalk.green(`Detected framework: ${framework}`));
+  let framework = await detectFramework();
+  
+   if (!framework) {
+    console.log(chalk.red('Framework selection was cancelled.'));
+    return;
   }
+  console.log(chalk.cyan('\n📝 Before proceeding, please:'));
+  console.log('1. Visit our authentication service website xyz_auth.com to create an account');
+  console.log('2. Create a new application/project');
+  console.log('3. Copy down your API credentials\n');
+  console.log(chalk.yellow('Once you have your credentials ready, enter them below:'));
+
 
   const questions = [
-    {
-      type: 'list',
-      name: 'framework',
-      message: 'Could not detect framework. Please select one:',
-      choices: ['Next.js', 'React'],
-      when: () => !framework
-    },
-    {
+        {
       type: 'list',
       name: 'nextjsRouter',
       message: 'Select Next.js router:',
       choices: ['App Router', 'Pages Router'],
       default: 'App Router',
-      when: (answers) => (answers.framework || framework) === 'Next.js'
+      // when: (answers) => (answers.framework || framework) === 'Next.js'
+      when: () => framework === 'Next.js' // Simplified condition
     },
+    //TODO: Remove this when the auth service website is hosted and hard code the baseURLs so user no longer needed to add it manually
     {
       type: 'input',
       name: 'apiBaseUrl',
@@ -128,10 +173,7 @@ async function generate() {
   ];
 
   const answers = await inquirer.prompt(questions);
-  // If framework was detected, add it to answers object
-  if (framework) {
-    answers.framework = framework;
-  }
+  answers.framework = framework;
 
   console.log('\nGenerating files...');
   generateFiles(process.cwd(), answers);
@@ -154,8 +196,15 @@ async function remove() {
 
   if (confirm) {
     console.log('\nRemoving files...');
-    // We need to detect the framework to know where the files are
-    const framework = detectFramework() || 'Next.js'; // Default to Next.js if not detectable
+    
+    const framework = await detectFramework();
+    
+    // Add this check to handle cancellation
+    if (!framework) {
+      console.log(chalk.red('Framework detection cancelled. Cannot proceed with file removal.'));
+      return;
+    }
+    
     require('../lib/generators/fileGenerator').removeFiles(process.cwd(), { framework });
     console.log(chalk.green('\nFiles removed successfully.'));
   } else {
