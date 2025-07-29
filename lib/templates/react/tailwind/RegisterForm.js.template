@@ -1,8 +1,10 @@
 // components/auth/RegisterForm.js
 import React, { useState } from 'react';
 import { signUpWithCredentials } from '../../lib/auth';
+import AuthButtons from './AuthButtons';
 
-export default function RegisterForm() {
+
+export default function RegisterForm({ onToggleForm }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -33,9 +35,9 @@ export default function RegisterForm() {
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             Already have an account?{' '}
-            <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">
+            <button onClick={onToggleForm} className="font-medium text-indigo-600 hover:text-indigo-500">
               Sign in
-            </a>
+            </button>
           </p>
         </div>
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
@@ -95,6 +97,7 @@ export default function RegisterForm() {
             </button>
           </div>
         </form>
+        <AuthButtons />
       </div>
     </div>
   );
